@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"io"
 	"path"
 	"strings"
 	"encoding/json"
@@ -61,6 +62,7 @@ func getItem(c echo.Context) error {
 	return c.JSON(http.StatusOK, getitem)
 }
 
+
 // POST "/items"
 func addItem(c echo.Context) error {
 	// Create or open JSON file
@@ -74,7 +76,7 @@ func addItem(c echo.Context) error {
 	// Get form data
 	item.Name     = c.FormValue("name")
 	item.Category = c.FormValue("category")
-	image, err    := c.FormFile("image")
+	image, err   := c.FormFile("image")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -93,6 +95,19 @@ func addItem(c echo.Context) error {
 	hash := sha256.Sum256([]byte(image_path))
 	hash_string := fmt.Sprintf("%x", hash)
 	item.Image_name = hash_string + ".jpg"
+
+	// Save image
+	imgfile, err := os.OpenFile("images", os.O_RDWR, 0644)
+	if err != nil {
+		c.Logger().Infof("Error message: %s", err)
+	}
+	defer imgfile.Close()
+
+	f, err := os.Create(hash_string + ".jpg")
+	if err != nil {
+		c.Logger().Infof("Error message: %s", err)
+	}
+	io.Copy(f, imgfile)
 
 	// Add Items
 	itemindex.Items = append(itemindex.Items, item)
@@ -147,7 +162,7 @@ func getImg(c echo.Context) error {
 		imgPath = path.Join(ImgDir, "default.jpg")
 	}
 	return c.File(imgPath)
-}
+}	
 
 func main() {
 	e := echo.New()
