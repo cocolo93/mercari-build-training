@@ -101,13 +101,22 @@ func addItem(c echo.Context) error {
 	if err != nil {
 		c.Logger().Infof("Error message: %s", err)
 	}
-	defer imgfile.Close()
 
-	f, err := os.Create(hash_string + ".jpg")
+	src, err := image.Open()
 	if err != nil {
 		c.Logger().Infof("Error message: %s", err)
 	}
+	defer src.Close()
+
+	f, err := os.Create("images/" + hash_string + ".jpg")
+	if err != nil {
+		c.Logger().Infof("Error message: %s", err)
+	}
+	defer f.Close()
+	
+	io.Copy(f, src)
 	io.Copy(f, imgfile)
+	defer imgfile.Close()
 
 	// Add Items
 	itemindex.Items = append(itemindex.Items, item)
