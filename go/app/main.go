@@ -77,7 +77,7 @@ func addItem(c echo.Context) error {
 	item.Category = c.FormValue("category")
 	image, err   := c.FormFile("image")
 	if err != nil {
-		return err
+		return c.JSON(http.StatusBadRequest, Response{Message: err.Error()})
 	}
 	defer file.Close()
 	// Open image
