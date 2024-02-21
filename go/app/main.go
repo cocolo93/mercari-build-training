@@ -10,10 +10,12 @@ import (
 	"encoding/json"
 	"crypto/sha256"
 	"strconv"
+	"database/sql"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 const (
@@ -22,6 +24,7 @@ const (
 type Response struct {
 	Message    string `json:"message"`
 }
+
 
 // Define structure
 type ItemIndex struct {
@@ -44,18 +47,19 @@ var item Item
 
 // GET "/items"
 func getItem(c echo.Context) error {
-	//open JSON file
-	file, err := os.Open("items.json")
-	if err != nil {
-		c.Logger().Infof("Error message: %s", err)
+	// Open database
+	DBopen, err := sql.Open("sqlite3", "./mercari.sqlite3")
+	if err1 != nil {
+		return c.JSON(http.StatusInternalServerError, Response{Message: err.Error()})
 	}
-	defer file.Close()
-
+	defer DBopen.Close()
+	// Query items
+	rows, err := db.Query("SELECT name, category, image_name FROM items")
 	var getitem ItemIndex
 
 	// Decode
 	if err := json.NewDecoder(file).Decode(&getitem); err != nil {
-		c.Logger().Infof("Error message: %s", err)
+		return c.JSON(http.StatusInternalServerError, Response{Message: err.Error()})
 	}
 	defer file.Close()
 
@@ -66,35 +70,34 @@ func getItem(c echo.Context) error {
 // POST "/items"
 func addItem(c echo.Context) error {
 	// Create or open JSON file
-	file, err := os.OpenFile("items.json", os.O_RDWR|os.O_CREATE, 0644)
-	if err != nil {
-		c.Logger().Infof("Error message: %s", err)
-	}
-	defer file.Close()
+	// file, err := os.OpenFile("items.json", os.O_RDWR|os.O_CREATE, 0644)
+	// if err != nil {
+	// 	c.Logger().Infof("Error message: %s", err)
+	// }
+	// defer file.Close()
 
 
 	// Get form data
-	item.Name     = c.FormValue("name")
-	item.Category = c.FormValue("category")
-	image, err   := c.FormFile("image")
+	Name     := c.FormValue("name")
+	Category := c.FormValue("category")
+	Image, err   := c.FormFile("image")
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer file.Close()
-	image_path := fmt.Sprintf("%x", image)
+	
+	image_path := fmt.Sprintf("%x", Image)
 
 	// Log
-	c.Logger().Infof("Receive item: %s", item.Name)
-	c.Logger().Infof("Receive category: %s", item.Category)
-	c.Logger().Infof("Receive image: %s", image)
+	c.Logger().Infof("Receive item: %s", Name)
+	c.Logger().Infof("Receive category: %s", Category)
+	c.Logger().Infof("Receive image: %s", Image)
 
-	message := fmt.Sprintf("item received: %s", item.Name)
-	res := Response{Message: message}
+	message := fmt.Sprintf("item received: %s", Name)
 
 	// Hash
 	hash := sha256.Sum256([]byte(image_path))
 	hash_string := fmt.Sprintf("%x", hash)
-	item.Image_name = hash_string + ".jpg"
+	Image_name := hash_string + ".jpg"
 
 	// Save image
 	imgfile, err := os.OpenFile("images", os.O_RDWR, 0644)
@@ -102,7 +105,7 @@ func addItem(c echo.Context) error {
 		c.Logger().Infof("Error message: %s", err)
 	}
 
-	src, err := image.Open()
+	src, err := Image.Open()
 	if err != nil {
 		c.Logger().Infof("Error message: %s", err)
 	}
@@ -119,14 +122,15 @@ func addItem(c echo.Context) error {
 	defer imgfile.Close()
 
 	// Add Items
-	itemindex.Items = append(itemindex.Items, item)
+	DB_write(Name, Category, Image_name)
 	
-	// Encode JSON
-	encoder := json.NewEncoder(file)
-	if err := encoder.Encode(itemindex); err != nil {
-		c.Logger().Infof("Error message: %s", err)
-	 }
-	 return c.JSON(http.StatusOK, res)
+	// // Encode JSON
+	// encoder := json.NewEncoder(file)
+	// if err := encoder.Encode(itemindex); err != nil {
+	// 	c.Logger().Infof("Error message: %s", err)
+	//  }
+	res := Response{Message: message}
+	return c.JSON(http.StatusOK, res)
 }
 
 //GET "/items/:id"
@@ -134,7 +138,7 @@ func showItem(c echo.Context) error {
 	// Get id & debug
 	id, err := strconv.Atoi(c.Param("id")) 
 	if err != nil {
-		c.Logger().Infof("Error message: %s", err)
+		return c.JSON(http.StatusInternalServerError, Response{Message: err.Error()})
 	}
 	if id == 0 { 
 		c.Logger().Infof("Error message: Out of range")
@@ -143,7 +147,7 @@ func showItem(c echo.Context) error {
 	//open JSON file
 	file, err := os.Open("items.json")
 	if err != nil {
-		c.Logger().Infof("Error message: %s", err)
+		return c.JSON(http.StatusInternalServerError, Response{Message: err.Error()})
 	}
 	defer file.Close()
 
@@ -151,7 +155,7 @@ func showItem(c echo.Context) error {
 
 	// Decode
 	if err := json.NewDecoder(file).Decode(&showitem); err != nil {
-		c.Logger().Infof("Error message: %s", err)
+		return c.JSON(http.StatusInternalServerError, Response{Message: err.Error()})
 	}
 	defer file.Close()
 	return c.JSON(http.StatusOK, showitem.Items[id-1])
