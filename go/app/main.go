@@ -39,15 +39,12 @@ func root(c echo.Context) error {
 	return c.JSON(http.StatusOK, res)
 }
 
-var itemindex ItemIndex
-var item Item
-
 // GET "/items"
 func getItem(c echo.Context) error {
 	//open JSON file
 	file, err := os.Open("items.json")
 	if err != nil {
-		c.Logger().Infof("Error message: %s", err)
+		return c.JSON(http.StatusInternalServerError, Response{Message: err.Error()})
 	}
 	defer file.Close()
 
@@ -55,7 +52,7 @@ func getItem(c echo.Context) error {
 
 	// Decode
 	if err := json.NewDecoder(file).Decode(&getitem); err != nil {
-		c.Logger().Infof("Error message: %s", err)
+		return c.JSON(http.StatusInternalServerError, Response{Message: err.Error()})
 	}
 	defer file.Close()
 
@@ -68,28 +65,35 @@ func addItem(c echo.Context) error {
 	// Create or open JSON file
 	file, err := os.OpenFile("items.json", os.O_RDWR|os.O_CREATE, 0644)
 	if err != nil {
-		c.Logger().Infof("Error message: %s", err)
+		return c.JSON(http.StatusInternalServerError, Response{Message: err.Error()})
 	}
 	defer file.Close()
 
+	var itemindex ItemIndex
+	var item Item
 
 	// Get form data
 	item.Name     = c.FormValue("name")
 	item.Category = c.FormValue("category")
 	image, err   := c.FormFile("image")
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	defer file.Close()
+	// Open image
+	src, err := image.Open()
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, Response{Message: err.Error()})
+	}
+	defer src.Close()
 	image_path := fmt.Sprintf("%x", image)
 
 	// Log
 	c.Logger().Infof("Receive item: %s", item.Name)
 	c.Logger().Infof("Receive category: %s", item.Category)
-	c.Logger().Infof("Receive image: %s", image)
+	c.Logger().Infof("Receive image: %s", image_path)
 
 	message := fmt.Sprintf("item received: %s", item.Name)
-	res := Response{Message: message}
 
 	// Hash
 	hash := sha256.Sum256([]byte(image_path))
@@ -97,26 +101,13 @@ func addItem(c echo.Context) error {
 	item.Image_name = hash_string + ".jpg"
 
 	// Save image
-	imgfile, err := os.OpenFile("images", os.O_RDWR, 0644)
-	if err != nil {
-		c.Logger().Infof("Error message: %s", err)
-	}
-
-	src, err := image.Open()
-	if err != nil {
-		c.Logger().Infof("Error message: %s", err)
-	}
-	defer src.Close()
-
 	f, err := os.Create("images/" + hash_string + ".jpg")
 	if err != nil {
-		c.Logger().Infof("Error message: %s", err)
+		return c.JSON(http.StatusInternalServerError, Response{Message: err.Error()})
 	}
 	defer f.Close()
-	
+
 	io.Copy(f, src)
-	io.Copy(f, imgfile)
-	defer imgfile.Close()
 
 	// Add Items
 	itemindex.Items = append(itemindex.Items, item)
@@ -124,9 +115,11 @@ func addItem(c echo.Context) error {
 	// Encode JSON
 	encoder := json.NewEncoder(file)
 	if err := encoder.Encode(itemindex); err != nil {
-		c.Logger().Infof("Error message: %s", err)
+		return c.JSON(http.StatusInternalServerError, Response{Message: err.Error()})
 	 }
-	 return c.JSON(http.StatusOK, res)
+
+	res := Response{Message: message}
+	return c.JSON(http.StatusOK, res)
 }
 
 //GET "/items/:id"
@@ -134,16 +127,16 @@ func showItem(c echo.Context) error {
 	// Get id & debug
 	id, err := strconv.Atoi(c.Param("id")) 
 	if err != nil {
-		c.Logger().Infof("Error message: %s", err)
+		return c.JSON(http.StatusInternalServerError, Response{Message: err.Error()})
 	}
-	if id == 0 { 
-		c.Logger().Infof("Error message: Out of range")
+	if id <= 0 { 
+		return c.JSON(http.StatusInternalServerError, Response{Message: err.Error()})
 	}
 
 	//open JSON file
 	file, err := os.Open("items.json")
 	if err != nil {
-		c.Logger().Infof("Error message: %s", err)
+		return c.JSON(http.StatusInternalServerError, Response{Message: err.Error()})
 	}
 	defer file.Close()
 
@@ -151,7 +144,7 @@ func showItem(c echo.Context) error {
 
 	// Decode
 	if err := json.NewDecoder(file).Decode(&showitem); err != nil {
-		c.Logger().Infof("Error message: %s", err)
+		return c.JSON(http.StatusInternalServerError, Response{Message: err.Error()})
 	}
 	defer file.Close()
 	return c.JSON(http.StatusOK, showitem.Items[id-1])
@@ -200,5 +193,4 @@ func main() {
 
 	// Start server
 	e.Logger.Fatal(e.Start(":9000"))
-
 }
