@@ -12,9 +12,8 @@ COPY db /app/db
 RUN chown -R trainee:mercari /app/db
 
 WORKDIR /app/go
-RUN apk add --update --no-cache ca-certificates git \
-    && go mod download \
-    && go build -o ./mercari-build-training ./app/*.go
+RUN go mod tidy
+RUN go build -o ./mercari-build-training ./app/*.go
 
 EXPOSE 9000
 
