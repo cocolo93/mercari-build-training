@@ -1,18 +1,21 @@
 FROM golang:1.21-alpine
 WORKDIR /app
 
+RUN addgroup -S mercari && adduser -S trainee -G mercari
+
 # Goのパッケージをインストール
 RUN apk add --no-cache go gcc musl-dev
 
-COPY . .
-COPY go.mod go.sum ./
-RUN go mod download
-COPY db/ ./db/
+WORKDIR /app
+COPY . /app/go
+COPY db /app/db
+RUN chown -R trainee:mercari /app/db
+
+WORKDIR /app/go
 RUN go mod tidy
 
-RUN addgroup -S mercari && adduser -S trainee -G mercari
-RUN chown -R trainee:mercari /go
+RUN go build -o ./mercari-build-training ./app/*.go
 
 EXPOSE 9000
 
-CMD ["go", "run", "app/main.go"]
+CMD go run app/main.go
