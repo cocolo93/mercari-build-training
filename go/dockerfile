@@ -19,3 +19,4 @@ RUN go build -o ./mercari-build-training ./app/*.go
 EXPOSE 9000
 
 CMD go run app/main.go
+
