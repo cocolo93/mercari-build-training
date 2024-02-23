@@ -6,10 +6,9 @@ RUN apk add --no-cache go gcc musl-dev
 
 WORKDIR /app
 
-COPY . /app/go
+COPY app/ /app/
+COPY go.mod ./
 COPY db/ /app/db
-
-#RUN go build -o ./mercari-build-training ./app/*.go
 
 RUN addgroup -S mercari && adduser -S trainee -G mercari
 RUN chown -R trainee:mercari db/
