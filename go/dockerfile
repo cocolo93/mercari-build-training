@@ -5,7 +5,6 @@ WORKDIR /app
 RUN apk add --no-cache go gcc musl-dev
 
 WORKDIR /app
-COPY go.mod go.sum ./
 
 COPY . /app/go
 COPY db/ /app/db
