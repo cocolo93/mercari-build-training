@@ -6,7 +6,6 @@ RUN addgroup -S mercari && adduser -S trainee -G mercari
 # Goのパッケージをインストール
 RUN apk add --no-cache go gcc musl-dev
 
-WORKDIR /app
 COPY . /app/go
 COPY db /app/db
 RUN chown -R trainee:mercari /app/db
