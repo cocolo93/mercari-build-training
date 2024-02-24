@@ -6,9 +6,9 @@ RUN addgroup -S mercari && adduser -S trainee -G mercari
 # Goのパッケージをインストール
 RUN apk add --no-cache go gcc musl-dev
 
+RUN ls -la
 COPY . /app/go
-COPY db/ /app/db
-RUN chown -R trainee:mercari /app/db
+RUN chown -R trainee:mercari /app/go/db
 
 WORKDIR /app/go
 RUN go mod tidy
@@ -16,4 +16,3 @@ RUN go mod tidy
 EXPOSE 9000
 
 CMD go run app/main.go
-

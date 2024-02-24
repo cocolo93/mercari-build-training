@@ -17,7 +17,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 const (
-	DB_PATH = "../db/mercari.sqlite3"
+	DB_PATH = "db/mercari.sqlite3"
 )
 const (
 	ImgDir = "images"
