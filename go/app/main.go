@@ -215,7 +215,7 @@ func getImg(c echo.Context) error {
 
 // GET "/search"
 func searchItem (c echo.Context) error {
-	keyword := c.FormValue("keyword")
+	keyword := c.QueryParam("keyword")
 	// Open DB
 	db, err := sql.Open("sqlite3", "mercari.sqlite3")
 	if err != nil {
