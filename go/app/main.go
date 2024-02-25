@@ -246,6 +246,27 @@ func searchItem (c echo.Context) error {
 	return c.JSON(http.StatusOK, items)
 }
 
+func createTable() error {
+	// Open DB
+	db, err := sql.Open("sqlite3", DB_PATH)
+	if err != nil {
+		fmt.Println(err)
+		return nil
+	}
+	defer db.Close()
+
+	itemsSchema, err := os.ReadFile("db/items.db")
+	if err != nil {
+		fmt.Println(err)
+		return nil
+	}
+	if _, err := db.Exec(string(itemsSchema)); err != nil {
+		fmt.Println(err)
+		return nil
+	}
+	return nil
+}
+
 func main() {
 	e := echo.New()
 
@@ -262,6 +283,12 @@ func main() {
 		AllowOrigins: []string{frontURL},
 		AllowMethods: []string{http.MethodGet, http.MethodPut, http.MethodPost, http.MethodDelete},
 	}))
+
+	err := createTable()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 
 	// Routes
 	e.GET("/", root)
