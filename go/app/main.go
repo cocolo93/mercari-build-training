@@ -17,7 +17,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 const (
-	DB_PATH = "../db/mercari.sqlite3"
+	DB_PATH = "db/mercari.sqlite3"
 )
 const (
 	ImgDir = "images"
@@ -192,8 +192,7 @@ func showItem(c echo.Context) error {
 	// debug (idが0以下または配列の長さを超えるとき)
 	length := len(showItems.Items)
 	if id <= 0 || id > length{ 
-		c.Logger().Infof("out of range")
-		return c.JSON(http.StatusInternalServerError, Response{Message: err.Error()})
+		return fmt.Errorf("Message: Out of range")
 	}
 
 	return c.JSON(http.StatusOK, showItems.Items[id-1])
@@ -246,6 +245,25 @@ func searchItem (c echo.Context) error {
 	return c.JSON(http.StatusOK, items)
 }
 
+func createTable() error {
+	// Open DB
+	db, err := sql.Open("sqlite3", DB_PATH)
+	if err != nil {
+		return fmt.Errorf("Message: %w", err)
+	}
+	defer db.Close()
+
+	itemsSchema, err := os.ReadFile("db/items.db")
+	if err != nil {
+		return fmt.Errorf("Message: %w", err)
+	}
+	_, err = db.Exec(string(itemsSchema)) 
+	if err != nil {
+		return fmt.Errorf("Message: %w", err)
+	}
+	return nil
+}
+
 func main() {
 	e := echo.New()
 
@@ -263,6 +281,10 @@ func main() {
 		AllowMethods: []string{http.MethodGet, http.MethodPut, http.MethodPost, http.MethodDelete},
 	}))
 
+	if err := createTable(); err != nil{
+		fmt.Println(err)
+	}
+	
 	// Routes
 	e.GET("/", root)
 	e.GET("/items", getItem)
