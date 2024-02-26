@@ -16,7 +16,9 @@ import (
 	"github.com/labstack/gommon/log"
 	_ "github.com/mattn/go-sqlite3"
 )
-
+const (
+	DB_PATH = "../db/mercari.sqlite3"
+)
 const (
 	ImgDir = "images"
 )
@@ -43,7 +45,7 @@ func root(c echo.Context) error {
 // GET "/items"
 func getItem(c echo.Context) error {
 	// Open DB
-	db, err := sql.Open("sqlite3", "mercari.sqlite3")
+	db, err := sql.Open("sqlite3", DB_PATH)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, Response{Message: err.Error()})
 	}
@@ -75,7 +77,7 @@ func getItem(c echo.Context) error {
 // POST "/items"
 func addItem(c echo.Context) error {
 	// Open DB
-	db, err := sql.Open("sqlite3", "mercari.sqlite3")
+	db, err := sql.Open("sqlite3", DB_PATH)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, Response{Message: err.Error()})
 	}
@@ -163,7 +165,7 @@ func showItem(c echo.Context) error {
 	}
 	
 	// Open DB
-	db, err := sql.Open("sqlite3", "mercari.sqlite3")
+	db, err := sql.Open("sqlite3", DB_PATH)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, Response{Message: err.Error()})
 	}
@@ -217,7 +219,7 @@ func getImg(c echo.Context) error {
 func searchItem (c echo.Context) error {
 	keyword := c.QueryParam("keyword")
 	// Open DB
-	db, err := sql.Open("sqlite3", "mercari.sqlite3")
+	db, err := sql.Open("sqlite3", DB_PATH)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, Response{Message: err.Error()})
 	}
