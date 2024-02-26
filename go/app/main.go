@@ -215,7 +215,7 @@ func getImg(c echo.Context) error {
 }
 
 // GET "/search"
-func searchItem (c echo.Context) error {
+func searchItem(c echo.Context) error {
 	keyword := c.QueryParam("keyword")
 	// Open DB
 	db, err := sql.Open("sqlite3", DB_PATH)
