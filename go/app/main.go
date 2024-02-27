@@ -54,7 +54,7 @@ func getItem(c echo.Context) error {
 	
 
 	// レコード読み込み
-	rows, err := db.Query("SELECT items.id, items.name, categories.name, items.image_name FROM items JOIN categories ON items.category_id = categories.id")
+	rows, err := db.Query("SELECT items.id, items.name, categories.name, items.image_name FROM items JOIN categories ON items.category_id = categories.id ORDER BY items.id DESC")
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, Response{Message: err.Error()})
 	}
@@ -162,7 +162,7 @@ func showItem(c echo.Context) error {
 	// Get id
 	id, err := strconv.Atoi(c.Param("id")) 
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, Response{Message: err.Error()})
+		return c.JSON(http.StatusBadRequest, Response{Message: err.Error()})
 	}
 	
 	// Open DB
@@ -204,7 +204,7 @@ func getImg(c echo.Context) error {
 
 	id, err := strconv.Atoi(c.Param("imageFilename"))
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, Response{Message: err.Error()})
+		return c.JSON(http.StatusBadRequest, Response{Message: err.Error()})
 	}
 
 	db, err := sql.Open("sqlite3", DB_PATH)
