@@ -3,7 +3,7 @@ WORKDIR /app
 
 RUN addgroup -S mercari && adduser -S trainee -G mercari
 
-# Goのパッケージをインストール
+#  Goのパッケージをインストール
 RUN apk add --no-cache go gcc musl-dev
 
 COPY . /app/go

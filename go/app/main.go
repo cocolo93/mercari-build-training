@@ -6,7 +6,6 @@ import (
 	"os"
 	"io"
 	"path"
-	"strings"
 	"crypto/sha256"
 	"strconv"
 	"database/sql"
@@ -28,12 +27,14 @@ type Response struct {
 
 // Define structure
 type ItemIndex struct {
-	Items      []Item
+	Items      []Item `json:"items"`
 }
+
 type Item struct {	
-	Name       string 
-	Category   string
-	Image_name string
+	Id         int    `json:"id"`
+	Name       string `json:"name"`
+	Category   string `json:"category"`
+	Image_name string `json:"image_name"`
 }
 
 // GET "/"
@@ -53,24 +54,24 @@ func getItem(c echo.Context) error {
 	
 
 	// レコード読み込み
-	var items []Item
-	rows, err := db.Query("SELECT items.name, categories.name, items.image_name FROM items JOIN categories ON items.category_id = categories.id")
+	rows, err := db.Query("SELECT items.id, items.name, categories.name, items.image_name FROM items JOIN categories ON items.category_id = categories.id ORDER BY items.id DESC")
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, Response{Message: err.Error()})
 	}
 	defer rows.Close()
 
+	var itemIndex ItemIndex
 	// レコード取り出し
 	for rows.Next() {
-		var add Item
-        err := rows.Scan(&add.Name, &add.Category, &add.Image_name)
+		var item Item
+        err := rows.Scan(&item.Id, &item.Name, &item.Category, &item.Image_name)
         if err != nil {
             return c.JSON(http.StatusInternalServerError, Response{Message: err.Error()})
         }
-		items = append(items, add)
+		itemIndex.Items = append(itemIndex.Items, item)
     }
 
-	return c.JSON(http.StatusOK, items)
+	return c.JSON(http.StatusOK, itemIndex)
 }
 
 
@@ -161,7 +162,7 @@ func showItem(c echo.Context) error {
 	// Get id
 	id, err := strconv.Atoi(c.Param("id")) 
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, Response{Message: err.Error()})
+		return c.JSON(http.StatusBadRequest, Response{Message: err.Error()})
 	}
 	
 	// Open DB
@@ -200,13 +201,29 @@ func showItem(c echo.Context) error {
 
 // GET "/image/:imageFilename"
 func getImg(c echo.Context) error {
-	// Create image path
-	imgPath := path.Join(ImgDir, c.Param("imageFilename"))
 
-	if !strings.HasSuffix(imgPath, ".jpg") {
-		res := Response{Message: "Image path does not end with .jpg"}
-		return c.JSON(http.StatusBadRequest, res)
+	id, err := strconv.Atoi(c.Param("imageFilename"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, Response{Message: err.Error()})
 	}
+
+	db, err := sql.Open("sqlite3", DB_PATH)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, Response{Message: err.Error()})
+	}
+	defer db.Close()
+
+	stmt, err :=db.Prepare("SELECT items.image_name FROM items WHERE items.id=?")
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, Response{Message: err.Error()})
+	}
+
+	var image_name string
+	if err := stmt.QueryRow(id).Scan(&image_name); err != nil {
+		return c.JSON(http.StatusInternalServerError, Response{Message: err.Error()})
+	}
+	imgPath := path.Join(ImgDir, image_name)
+
 	if _, err := os.Stat(imgPath); err != nil {
 		c.Logger().Infof("Image not found: %s", imgPath)
 		imgPath = path.Join(ImgDir, "default.jpg")
@@ -215,7 +232,7 @@ func getImg(c echo.Context) error {
 }
 
 // GET "/search"
-func searchItem (c echo.Context) error {
+func searchItem(c echo.Context) error {
 	keyword := c.QueryParam("keyword")
 	// Open DB
 	db, err := sql.Open("sqlite3", DB_PATH)
