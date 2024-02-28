@@ -2,21 +2,18 @@ services:
   api:
     build: 
       context: .
-      dockerfile: ./go/Dockerfile
+      dockerfile: ./go/dockerfile
+    working_dir: /app
     ports:
       - "9000:9000"
-    volumes:
-      - .:/app
     environment:
       FRONT_URL: "http://localhost:3000"
   web:
     build:
       context: .
-      dockerfile: ./typescript/simple-mercari-web/Dockerfile
-      network: host
+      dockerfile: ./typescript/simple-mercari-web/dockerfile
+    working_dir: /web
     ports:
       - "3000:3000"
-    volumes:
-      - .:/app
     environment: 
       REACT_APP_API_URL: "http://localhost:9000"

@@ -1,13 +1,14 @@
 FROM node:20-alpine
-WORKDIR /app
+WORKDIR /web
 
-COPY . /app
+COPY . .
 
 RUN addgroup -S mercari && adduser -S trainee -G mercari
-USER trainee
-RUN chown -R trainee:mercari /app
-
+RUN chown -R trainee:mercari /web
+RUN npm install
 RUN npm ci
+
+USER trainee
 
 EXPOSE 3000
 
