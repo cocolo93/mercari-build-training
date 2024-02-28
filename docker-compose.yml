@@ -1,17 +1,17 @@
 services:
   api:
     build: 
-      context: .
-      dockerfile: ./go/dockerfile
-    working_dir: /app
+      context: go/
+      dockerfile: dockerfile
+    working_dir: /api
     ports:
       - "9000:9000"
     environment:
       FRONT_URL: "http://localhost:3000"
   web:
     build:
-      context: .
-      dockerfile: ./typescript/simple-mercari-web/dockerfile
+      context: typescript/simple-mercari-web/
+      dockerfile: dockerfile
     working_dir: /web
     ports:
       - "3000:3000"
