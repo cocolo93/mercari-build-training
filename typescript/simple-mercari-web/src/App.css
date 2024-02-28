@@ -28,21 +28,30 @@
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   grid-gap: 20px;
   padding: 20px;
-  background-color: #222427;
-  color: white;
+  background-color: white;
+  color: black;
 }
 
 .ItemList {
   display: grid;
   grid-template-rows: auto auto auto;
   grid-gap: 10px;
+  padding: 10px;
+  border: 1px solid #222427;
+  border-radius: 5px;
 }
 
 .ItemList img {
-  max-width: 100%;
-  height: auto;
+  max-width: 300px;
+  max-height: 300px;
+  width: auto;
+  height:auto;
+  justify-self: center;
 }
-
+.string {
+  font-size: calc(10px + 1vmin);
+  justify-self: center;
+}
 .App-link {
   color: #61dafb;
 }
